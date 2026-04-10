@@ -23,7 +23,7 @@ CREATE TABLE applications (
                                   CHECK (type IN ('READY_TARIFF', 'CUSTOM')),
 
                               CONSTRAINT chk_applications_status
-                                  CHECK (status IN ('CREATED', 'PAID', 'CONNECTING', 'COMPLETED', 'REJECTED', 'CANCELLED')),
+                                  CHECK (status IN ('CREATED', 'PAID', 'CONNECTED', 'REJECTED', 'INACTIVE')),
 
                               CONSTRAINT chk_applications_total_cost
                                   CHECK (total_cost >= 0),
