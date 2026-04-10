@@ -1,0 +1,41 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: telecom-service
+  main:
+    banner-mode: off
+
+  # Настройки базы данных — подключаемся к PostgreSQL в Docker
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5439/telecom_db}
+    username: ${DATABASE_USERNAME:telecom}
+    password: ${DATABASE_PASSWORD:telecom}
+    driver-class-name: org.postgresql.Driver
+
+  # Настройки JPA
+  jpa:
+    generate-ddl: false
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Настройки Liquibase
+  liquibase:
+    enabled: true
+    change-log: classpath:db-migrations/changelog-master.xml
+
+# Настройки Eureka Discovery (вне spring)
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true

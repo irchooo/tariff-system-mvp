@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <include file="01_create_table_users.sql" relativeToChangelogFile="true"/>
+    <include file="02_create_table_tariffs.sql" relativeToChangelogFile="true"/>
+    <include file="03_create_table_service_parameters.sql" relativeToChangelogFile="true"/>
+    <include file="04_create_table_tariff_parameters.sql" relativeToChangelogFile="true"/>
+    <include file="05_create_table_applications.sql" relativeToChangelogFile="true"/>
+    <include file="06_create_table_application_items.sql" relativeToChangelogFile="true"/>
+    <include file="07_insert_service_parameters.sql" relativeToChangelogFile="true"/>
+    <include file="08_insert_tariffs.sql" relativeToChangelogFile="true"/>
+    <include file="09_insert_tariff_parameters.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
