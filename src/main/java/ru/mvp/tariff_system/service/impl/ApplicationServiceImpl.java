@@ -6,10 +6,13 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.mvp.tariff_system.dto.request.ApplicationCancelRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationCreateRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationParameterRequestDto;
+import ru.mvp.tariff_system.dto.request.ApplicationStatusUpdateRequestDto;
+import ru.mvp.tariff_system.dto.response.AdminApplicationListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCancelResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCreateResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationStatusUpdateResponseDto;
 import ru.mvp.tariff_system.dto.response.PaymentResponseDto;
 import ru.mvp.tariff_system.entity.Application;
 import ru.mvp.tariff_system.entity.ApplicationItem;
@@ -23,6 +26,7 @@ import ru.mvp.tariff_system.exception.ApplicationCancellationNotAllowedException
 import ru.mvp.tariff_system.exception.ApplicationCreationNotAllowedException;
 import ru.mvp.tariff_system.exception.ApplicationNotFoundException;
 import ru.mvp.tariff_system.exception.ApplicationPaymentNotAllowedException;
+import ru.mvp.tariff_system.exception.ApplicationStatusUpdateNotAllowedException;
 import ru.mvp.tariff_system.exception.InvalidRequestException;
 import ru.mvp.tariff_system.exception.ServiceParameterNotFoundException;
 import ru.mvp.tariff_system.exception.TariffNotFoundException;
@@ -270,5 +274,116 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private boolean emulatePayment() {
         return Math.random() < 0.9;
+    }
+
+    @Override
+    @Transactional
+    public ApplicationStatusUpdateResponseDto updateApplicationStatus(
+            Long applicationId,
+            ApplicationStatusUpdateRequestDto request
+    ) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Заявка не найдена"));
+
+        if (application.getStatus() != ApplicationStatus.PAID) {
+            throw new ApplicationStatusUpdateNotAllowedException(
+                    "Изменять статус можно только у заявки в статусе PAID"
+            );
+        }
+
+        if (request.status() == ApplicationStatus.CONNECTED) {
+            application.setStatus(ApplicationStatus.CONNECTED);
+
+            return new ApplicationStatusUpdateResponseDto(
+                    application.getId(),
+                    application.getStatus(),
+                    "Заявка успешно подключена"
+            );
+        }
+
+        if (request.status() == ApplicationStatus.REJECTED) {
+
+            if (request.reason() == null || request.reason().isBlank()) {
+                throw new InvalidRequestException("Для отклонения заявки необходимо указать причину");
+            }
+
+            application.setStatus(ApplicationStatus.REJECTED);
+
+            return new ApplicationStatusUpdateResponseDto(
+                    application.getId(),
+                    application.getStatus(),
+                    "Заявка отклонена: " + request.reason()
+            );
+        }
+
+        throw new ApplicationStatusUpdateNotAllowedException(
+                "Допустимые статусы: CONNECTED или REJECTED"
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminApplicationListItemResponseDto> getAllApplicationsForAdmin(
+            ApplicationStatus status,
+            String clientName,
+            String tariffName,
+            Boolean customOnly,
+            String sortDirection
+    ) {
+        org.springframework.data.domain.Sort sort = buildAdminApplicationsSort(sortDirection);
+
+        org.springframework.data.jpa.domain.Specification<Application> specification =
+                org.springframework.data.jpa.domain.Specification.where(
+                                ru.mvp.tariff_system.repository.ApplicationSpecifications.hasStatus(status)
+                        )
+                        .and(ru.mvp.tariff_system.repository.ApplicationSpecifications.clientNameContains(clientName))
+                        .and(ru.mvp.tariff_system.repository.ApplicationSpecifications.tariffNameContains(tariffName))
+                        .and(ru.mvp.tariff_system.repository.ApplicationSpecifications.customOnly(customOnly));
+
+        return applicationRepository.findAll(specification, sort)
+                .stream()
+                .map(this::toAdminListItemResponseDto)
+                .toList();
+    }
+
+    private AdminApplicationListItemResponseDto toAdminListItemResponseDto(Application application) {
+        String tariffName = application.getTariff() != null
+                ? application.getTariff().getName()
+                : null;
+
+        String clientName = application.getUser().getFirstName() + " " + application.getUser().getLastName();
+
+        return new AdminApplicationListItemResponseDto(
+                application.getId(),
+                application.getUser().getId(),
+                clientName,
+                application.getCreatedAt(),
+                application.getTotalCost(),
+                application.getStatus(),
+                application.getType(),
+                tariffName
+        );
+    }
+
+    private org.springframework.data.domain.Sort buildAdminApplicationsSort(String sortDirection) {
+        if ("asc".equalsIgnoreCase(sortDirection)) {
+            return org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "createdAt");
+        }
+
+        return org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private String normalizeAndLowerFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toLowerCase();
     }
 }

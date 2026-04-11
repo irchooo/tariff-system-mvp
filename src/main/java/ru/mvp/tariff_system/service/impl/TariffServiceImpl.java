@@ -2,6 +2,8 @@ package ru.mvp.tariff_system.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.mvp.tariff_system.dto.response.AdminTariffListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.TariffResponseDto;
 import ru.mvp.tariff_system.dto.response.TariffServiceParameterResponseDto;
 import ru.mvp.tariff_system.entity.Tariff;
@@ -61,5 +63,56 @@ public class TariffServiceImpl implements TariffService {
         BigDecimal volume = BigDecimal.valueOf(tariffParameter.getVolume());
         BigDecimal pricePerUnit = tariffParameter.getServiceParameter().getPricePerUnit();
         return pricePerUnit.multiply(volume);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminTariffListItemResponseDto> getAllTariffsForAdmin(
+            String name,
+            Boolean isActive,
+            String sortDirection
+    ) {
+        org.springframework.data.domain.Sort sort = buildAdminTariffsSort(sortDirection);
+
+        org.springframework.data.jpa.domain.Specification<Tariff> specification =
+                org.springframework.data.jpa.domain.Specification.where(
+                                ru.mvp.tariff_system.repository.TariffSpecifications.nameContains(name)
+                        )
+                        .and(ru.mvp.tariff_system.repository.TariffSpecifications.hasIsActive(isActive));
+
+        return tariffRepository.findAll(specification, sort)
+                .stream()
+                .map(this::toAdminTariffListItemResponseDto)
+                .toList();
+    }
+
+    private AdminTariffListItemResponseDto toAdminTariffListItemResponseDto(Tariff tariff) {
+        BigDecimal totalPrice = tariff.getTariffParameters()
+                .stream()
+                .map(this::calculateLinePrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new AdminTariffListItemResponseDto(
+                tariff.getId(),
+                tariff.getName(),
+                tariff.getDescription(),
+                tariff.getIsActive(),
+                totalPrice
+        );
+    }
+
+    private org.springframework.data.domain.Sort buildAdminTariffsSort(String sortDirection) {
+        if ("asc".equalsIgnoreCase(sortDirection)) {
+            return org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "name");
+        }
+
+        return org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "name");
+    }
+
+    private String normalizeTariffFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }
