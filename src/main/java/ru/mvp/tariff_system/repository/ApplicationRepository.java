@@ -22,4 +22,19 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
     @EntityGraph(attributePaths = {"user", "tariff"})
     List<Application> findAll(org.springframework.data.jpa.domain.Specification<Application> spec,
                               org.springframework.data.domain.Sort sort);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+            "tariff",
+            "items",
+            "items.serviceParameter"
+    })
+    java.util.Optional<Application> findWithItemsByIdAndUserId(Long id, Long userId);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+            "user",
+            "tariff",
+            "items",
+            "items.serviceParameter"
+    })
+    java.util.Optional<Application> findWithDetailsById(Long id);
 }

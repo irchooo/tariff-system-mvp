@@ -3,9 +3,11 @@ package ru.mvp.tariff_system.service;
 import ru.mvp.tariff_system.dto.request.ApplicationCancelRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationCreateRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationStatusUpdateRequestDto;
+import ru.mvp.tariff_system.dto.response.AdminApplicationDetailsResponseDto;
 import ru.mvp.tariff_system.dto.response.AdminApplicationListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCancelResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCreateResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationDetailsResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationStatusUpdateResponseDto;
 import ru.mvp.tariff_system.dto.response.PaymentResponseDto;
@@ -31,4 +33,8 @@ public interface ApplicationService {
             Boolean customOnly,
             String sortDirection
     );
+
+    ApplicationDetailsResponseDto getMyApplicationById(Long userId, Long applicationId);
+
+    AdminApplicationDetailsResponseDto getApplicationDetailsForAdmin(Long applicationId);
 }

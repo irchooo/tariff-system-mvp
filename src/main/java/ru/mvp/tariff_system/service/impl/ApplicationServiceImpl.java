@@ -7,9 +7,13 @@ import ru.mvp.tariff_system.dto.request.ApplicationCancelRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationCreateRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationParameterRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationStatusUpdateRequestDto;
+import ru.mvp.tariff_system.dto.response.AdminApplicationDetailsResponseDto;
 import ru.mvp.tariff_system.dto.response.AdminApplicationListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCancelResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationClientResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCreateResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationDetailsResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListItemResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationStatusUpdateResponseDto;
@@ -385,5 +389,85 @@ public class ApplicationServiceImpl implements ApplicationService {
             return null;
         }
         return value.trim().toLowerCase();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationDetailsResponseDto getMyApplicationById(Long userId, Long applicationId) {
+        Application application = applicationRepository.findWithItemsByIdAndUserId(applicationId, userId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Заявка не найдена"));
+
+        String tariffName = application.getTariff() != null
+                ? application.getTariff().getName()
+                : null;
+
+        List<ApplicationItemResponseDto> items = application.getItems()
+                .stream()
+                .sorted(java.util.Comparator.comparing(ApplicationItem::getId))
+                .map(this::toApplicationItemResponseDto)
+                .toList();
+
+        return new ApplicationDetailsResponseDto(
+                application.getId(),
+                application.getCreatedAt(),
+                application.getTotalCost(),
+                application.getStatus(),
+                application.getType(),
+                tariffName,
+                items,
+                application.getContractUrl()
+        );
+    }
+
+    private ApplicationItemResponseDto toApplicationItemResponseDto(ApplicationItem item) {
+        Long serviceParameterId = item.getServiceParameter() != null
+                ? item.getServiceParameter().getId()
+                : null;
+
+        return new ApplicationItemResponseDto(
+                serviceParameterId,
+                item.getParameterName(),
+                item.getUnit(),
+                item.getVolume(),
+                item.getUnitPrice(),
+                item.getLineTotal()
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminApplicationDetailsResponseDto getApplicationDetailsForAdmin(Long applicationId) {
+        Application application = applicationRepository.findWithDetailsById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Заявка не найдена"));
+
+        String tariffName = application.getTariff() != null
+                ? application.getTariff().getName()
+                : null;
+
+        List<ApplicationItemResponseDto> items = application.getItems()
+                .stream()
+                .sorted(java.util.Comparator.comparing(ApplicationItem::getId))
+                .map(this::toApplicationItemResponseDto)
+                .toList();
+
+        ApplicationClientResponseDto client = new ApplicationClientResponseDto(
+                application.getUser().getId(),
+                application.getUser().getFirstName(),
+                application.getUser().getLastName(),
+                application.getUser().getPhoneNumber(),
+                application.getUser().getEmail()
+        );
+
+        return new AdminApplicationDetailsResponseDto(
+                application.getId(),
+                client,
+                application.getCreatedAt(),
+                application.getTotalCost(),
+                application.getStatus(),
+                application.getType(),
+                tariffName,
+                items,
+                application.getContractUrl()
+        );
     }
 }

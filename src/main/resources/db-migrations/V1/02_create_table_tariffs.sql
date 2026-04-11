@@ -5,3 +5,4 @@ CREATE TABLE tariffs (
                          is_active BOOLEAN DEFAULT TRUE,
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+

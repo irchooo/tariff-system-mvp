@@ -29,4 +29,6 @@ public interface TariffRepository extends JpaRepository<Tariff, Long>, JpaSpecif
     })
     List<Tariff> findAll(org.springframework.data.jpa.domain.Specification<Tariff> spec,
                          org.springframework.data.domain.Sort sort);
+
+    boolean existsByNameIgnoreCase(String name);
 }

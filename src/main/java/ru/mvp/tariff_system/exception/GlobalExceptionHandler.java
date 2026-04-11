@@ -65,6 +65,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(TariffAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleTariffAlreadyExists(TariffAlreadyExistsException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     private Map<String, Object> buildResponse(HttpStatus status, String message) {
         return Map.of(
                 "timestamp", LocalDateTime.now(),

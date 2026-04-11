@@ -14,6 +14,7 @@ import ru.mvp.tariff_system.dto.request.ApplicationCancelRequestDto;
 import ru.mvp.tariff_system.dto.request.ApplicationCreateRequestDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCancelResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationCreateResponseDto;
+import ru.mvp.tariff_system.dto.response.ApplicationDetailsResponseDto;
 import ru.mvp.tariff_system.dto.response.ApplicationListResponseDto;
 import ru.mvp.tariff_system.dto.response.PaymentResponseDto;
 import ru.mvp.tariff_system.security.CurrentUserHeaderData;
@@ -72,5 +73,16 @@ public class ApplicationController {
         Long userId = userService.getOrCreateCurrentUser(currentUser).id();
 
         return applicationService.payApplication(userId, id);
+    }
+
+    @GetMapping("/{id}")
+    public ApplicationDetailsResponseDto getMyApplicationById(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        CurrentUserHeaderData currentUser = currentUserHeaderExtractor.extract(httpRequest);
+        Long userId = userService.getOrCreateCurrentUser(currentUser).id();
+
+        return applicationService.getMyApplicationById(userId, id);
     }
 }
